@@ -20,7 +20,7 @@ import {
 	ErrorReporter,
 	ExecutionContextHookRegistry,
 } from 'n8n-core';
-import { ensureError, sleep, UnexpectedError } from 'n8n-workflow';
+import { sleep, UnexpectedError } from 'n8n-workflow';
 
 import type { AbstractServer } from '@/abstract-server';
 import { N8N_VERSION, N8N_RELEASE_DATE } from '@/constants';
@@ -32,12 +32,12 @@ import { TelemetryEventRelay } from '@/events/relays/telemetry.event-relay';
 import { WorkflowFailureNotificationEventRelay } from '@/events/relays/workflow-failure-notification.event-relay';
 import { ExternalHooks } from '@/external-hooks';
 import { License } from '@/license';
+import { LoadNodesAndCredentials } from '@/load-nodes-and-credentials';
 import { CommunityPackagesConfig } from '@/modules/community-packages/community-packages.config';
 import { NodeTypes } from '@/node-types';
 import { PostHogClient } from '@/posthog';
 import { ShutdownService } from '@/shutdown/shutdown.service';
 import { WorkflowHistoryManager } from '@/workflows/workflow-history/workflow-history-manager';
-import { LoadNodesAndCredentials } from '@/load-nodes-and-credentials';
 
 export abstract class BaseCommand<F = never> {
 	readonly flags: F;
@@ -246,11 +246,19 @@ export abstract class BaseCommand<F = never> {
 	}
 
 	async initLicense(): Promise<void> {
+		// [CUSTOM-FORK] License Activation: Auto-activate full license on service startup
 		this.license = Container.get(License);
-		await this.license.init();
+		await this.license.init(); // This will automatically activate local full license
 
 		Container.get(LicenseState).setLicenseProvider(this.license);
 
+		// License is automatically activated with Enterprise plan in license.ts init()
+		// No activation key needed - local full license is always active
+		this.logger.info('License initialized with Enterprise plan (auto-activated)');
+		// [CUSTOM-FORK] End License Activation
+
+		// Original activation key logic commented out - not needed for local full license
+		/*
 		const { activationKey } = this.globalConfig.license;
 
 		if (activationKey) {
@@ -269,6 +277,7 @@ export abstract class BaseCommand<F = never> {
 				this.logger.error('Could not activate license', { error });
 			}
 		}
+		*/
 	}
 
 	initWorkflowHistory() {

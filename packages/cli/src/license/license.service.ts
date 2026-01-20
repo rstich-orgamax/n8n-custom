@@ -2,14 +2,18 @@ import { LicenseState, Logger } from '@n8n/backend-common';
 import type { User } from '@n8n/db';
 import { WorkflowRepository } from '@n8n/db';
 import { Service } from '@n8n/di';
-import axios, { AxiosError } from 'axios';
-import { ensureError } from 'n8n-workflow';
+// [CUSTOM-FORK] License Activation: Unused imports - external HTTP calls removed
+// import axios, { AxiosError } from 'axios';
+// import { ensureError } from 'n8n-workflow';
+// [CUSTOM-FORK] End License Activation
 
-import { BadRequestError } from '@/errors/response-errors/bad-request.error';
-import { LicenseEulaRequiredError } from '@/errors/response-errors/license-eula-required.error';
+// [CUSTOM-FORK] License Activation: Unused imports - external activation code commented out
+// import { BadRequestError } from '@/errors/response-errors/bad-request.error';
+// import { LicenseEulaRequiredError } from '@/errors/response-errors/license-eula-required.error';
 import { EventService } from '@/events/event.service';
 import { License } from '@/license';
-import { UrlService } from '@/services/url.service';
+// import { UrlService } from '@/services/url.service'; // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
+// [CUSTOM-FORK] End License Activation
 
 export const LicenseErrors = {
 	SCHEMA_VALIDATION: 'Activation key is in the wrong format',
@@ -27,7 +31,7 @@ export class LicenseService {
 		private readonly license: License,
 		private readonly licenseState: LicenseState,
 		private readonly workflowRepository: WorkflowRepository,
-		private readonly urlService: UrlService,
+		// private readonly urlService: UrlService, // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
 		private readonly eventService: EventService,
 	) {}
 
@@ -56,7 +60,16 @@ export class LicenseService {
 		};
 	}
 
-	async requestEnterpriseTrial(user: User) {
+	async requestEnterpriseTrial(_user: User) {
+		// [CUSTOM-FORK] License Activation: Unused param - trial request is no-op
+		// [CUSTOM-FORK] License Activation: Skip external trial request - license already active locally
+		// No external server call needed - local full license is already active
+		this.logger.debug('Enterprise trial request skipped - local full license already active');
+		return;
+		// [CUSTOM-FORK] End License Activation
+
+		// Original code commented out to prevent external server calls
+		/*
 		await axios.post('https://enterprise.n8n.io/enterprise-trial', {
 			licenseType: 'enterprise',
 			firstName: user.firstName,
@@ -64,14 +77,15 @@ export class LicenseService {
 			email: user.email,
 			instanceUrl: this.urlService.getWebhookBaseUrl(),
 		});
+		*/
 	}
 
 	async registerCommunityEdition({
-		userId,
-		email,
-		instanceId,
-		instanceUrl,
-		licenseType,
+		// userId, // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
+		// email, // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
+		// instanceId, // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
+		// instanceUrl, // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
+		// licenseType, // [CUSTOM-FORK] License Activation: Unused - external HTTP calls removed
 	}: {
 		userId: User['id'];
 		email: string;
@@ -79,6 +93,18 @@ export class LicenseService {
 		instanceUrl: string;
 		licenseType: string;
 	}): Promise<{ title: string; text: string }> {
+		// [CUSTOM-FORK] License Activation: Skip external registration - return local success response
+		// No external HTTP call to enterprise.n8n.io - license already active locally
+		this.logger.debug('Community edition registration skipped - local full license already active');
+		// Return mock success response without external server call
+		return {
+			title: 'Registration successful',
+			text: 'Your instance is already running with Enterprise license.',
+		};
+		// [CUSTOM-FORK] End License Activation
+
+		// Original code commented out to prevent external server calls
+		/*
 		try {
 			const {
 				data: { licenseKey, ...rest },
@@ -103,6 +129,7 @@ export class LicenseService {
 				throw new BadRequestError('Failed to register community edition');
 			}
 		}
+		*/
 	}
 
 	getManagementJwt(): string {
@@ -114,10 +141,19 @@ export class LicenseService {
 	async activateLicense(activationKey: string, eulaUri: string, userEmail: string): Promise<void>;
 	// Implementation signature
 	async activateLicense(
-		activationKey: string,
-		eulaUri?: string,
-		userEmail?: string,
+		_activationKey: string, // [CUSTOM-FORK] License Activation: Unused - activation is no-op
+		_eulaUri?: string, // [CUSTOM-FORK] License Activation: Unused - activation is no-op
+		_userEmail?: string, // [CUSTOM-FORK] License Activation: Unused - activation is no-op
 	): Promise<void> {
+		// [CUSTOM-FORK] License Activation: Skip external activation - license already active locally
+		// License is already activated locally with full Enterprise plan
+		// No external server calls needed
+		this.logger.debug('License activation skipped - local full license already active');
+		return;
+		// [CUSTOM-FORK] End License Activation
+
+		// Original activation code commented out to prevent external server calls
+		/*
 		try {
 			if (eulaUri && userEmail) {
 				await this.license.activate(activationKey, eulaUri, userEmail);
@@ -137,6 +173,7 @@ export class LicenseService {
 			const message = this.mapErrorMessage(ensureError(e), 'activate');
 			throw new BadRequestError(message);
 		}
+		*/
 	}
 
 	private isEulaRequiredError(
@@ -158,6 +195,15 @@ export class LicenseService {
 	}
 
 	async renewLicense() {
+		// [CUSTOM-FORK] License Activation: Skip renewal - local license never expires
+		// Local full license never expires, no renewal needed
+		this.logger.debug('License renewal skipped - local full license never expires');
+		this.eventService.emit('license-renewal-attempted', { success: true });
+		return;
+		// [CUSTOM-FORK] End License Activation
+
+		// Original renewal code commented out to prevent external server calls
+		/*
 		if (this.license.getPlanName() === 'Community') return; // unlicensed, nothing to renew
 
 		try {
@@ -170,6 +216,7 @@ export class LicenseService {
 		}
 
 		this.eventService.emit('license-renewal-attempted', { success: true });
+		*/
 	}
 
 	private mapErrorMessage(error: Error, action: 'activate' | 'renew') {
