@@ -15,6 +15,10 @@
     "build:deploy": "node scripts/build-n8n.mjs",
     "build:deploy:om": "pnpm run build && cd packages/cli && pnpm pack",
     "build:docker": "node scripts/build-n8n.mjs && node scripts/dockerize-n8n.mjs",
+    "deploy:packages": "node scripts/deploy-packages.mjs",
+    "deploy:packages:full": "pnpm run build && node scripts/generate-third-party-licenses.mjs && node scripts/deploy-packages.mjs",
+    "deploy:packages:dry-run": "node scripts/deploy-packages.mjs --dry-run",
+    "deploy:packages:test": "cross-env N8N_SKIP_LICENSES=false N8N_SKIP_BUILD=false node scripts/deploy-packages.mjs --test",
     "build:docker:coverage": "BUILD_WITH_COVERAGE=true node scripts/build-n8n.mjs && node scripts/dockerize-n8n.mjs",
     "build:docker:scan": "node scripts/build-n8n.mjs && node scripts/dockerize-n8n.mjs && node scripts/scan-n8n-image.mjs",
     "build:docker:test": "node scripts/build-n8n.mjs && node scripts/dockerize-n8n.mjs && turbo run test:container:standard --filter=n8n-playwright",
@@ -139,7 +143,18 @@
     "patchedDependencies": {
       "bull@4.16.4": "patches/bull@4.16.4.patch",
       "pdfjs-dist@5.3.31": "patches/pdfjs-dist@5.3.31.patch",
-      "pkce-challenge@5.0.0": "patches/pkce-challenge@5.0.0.patch"
-    }
+      "pkce-challenge@5.0.0": "patches/pkce-challenge@5.0.0.patch",
+      "@types/express-serve-static-core@5.0.6": "patches/@types__express-serve-static-core@5.0.6.patch",
+      "@types/ws@8.18.1": "patches/@types__ws@8.18.1.patch",
+      "@types/uuencode@0.0.3": "patches/@types__uuencode@0.0.3.patch",
+      "vue-tsc@2.2.8": "patches/vue-tsc@2.2.8.patch",
+      "element-plus@2.4.3": "patches/element-plus@2.4.3.patch",
+      "js-base64": "patches/js-base64.patch",
+      "ics": "patches/ics.patch",
+      "minifaker": "patches/minifaker.patch",
+      "z-vue-scan": "patches/z-vue-scan.patch",
+      "@lezer/highlight": "patches/@lezer__highlight.patch",
+      "v-code-diff": "patches/v-code-diff.patch",
+      "assert@2.1.0": "patches/assert@2.1.0.patch"    }
   }
 }

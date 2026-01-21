@@ -301,6 +301,9 @@ async function generateThirdPartyLicenses() {
 		echo(chalk.red(`\n❌ Generation failed: ${error.message}`));
 		process.exit(1);
 	}
+
+	// Exit successfully after completion
+	process.exit(0);
 }
 
 generateThirdPartyLicenses();
