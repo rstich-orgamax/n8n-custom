@@ -30,6 +30,31 @@ Die Pakete sind stark voneinander abhängig. Ein typischer Ablauf:
 3. `core` lädt Nodes aus `nodes-base`.
 4. Alle Pakete nutzen Typen aus `workflow` und `@n8n/api-types`.
 
+### Kritische Abhängigkeitsversionen
+
+Einige Abhängigkeiten haben spezifische Versionsanforderungen, die zwingend eingehalten werden müssen:
+
+#### Zod
+
+**Version:** `3.25.67` (exakt)
+
+**Wichtig:** n8n und damit auch dieses Projekt benötigen **zwingend** Zod Version `3.25.67`.
+
+**Grund:** Neuere Versionen von Zod haben Breaking Changes bei der Behandlung von discriminated unions mit optionalen Discriminator-Feldern. Insbesondere die Schemas in `@n8n/api-types` (z.B. `CreateDestinationDto` für Log-Streaming-Destinations) funktionieren nur mit dieser spezifischen Version korrekt.
+
+**Konfiguration:** Die Version ist im `pnpm-workspace.yaml` Catalog definiert:
+```yaml
+catalog:
+  zod: 3.25.67
+```
+
+**Fehler bei falscher Version:** Bei Verwendung einer anderen Zod-Version kann folgender Fehler auftreten:
+```
+Error: A discriminator value for key `__type` could not be extracted from all schema options
+```
+
+**Hinweis für externe Projekte:** Wenn Sie die n8n-Packages in einem eigenen Projekt verwenden, stellen Sie sicher, dass Sie ebenfalls Zod `3.25.67` verwenden, um Kompatibilitätsprobleme zu vermeiden.
+
 ## Aktualisierung von Abhängigkeiten
 
 Im Monorepo sollten Abhängigkeiten synchron gehalten werden.
