@@ -1,7 +1,7 @@
 import type { CreateApiKeyRequestDto, UnixTimestamp, UpdateApiKeyRequestDto } from '@n8n/api-types';
 import type { AuthenticatedRequest, User } from '@n8n/db';
 import { ApiKey, ApiKeyRepository, UserRepository, withTransaction } from '@n8n/db';
-import { Service } from '@n8n/di';
+import { Container, Service } from '@n8n/di';
 import type { ApiKeyScope, AuthPrincipal } from '@n8n/permissions';
 import { getApiKeyScopesForRole, getOwnerOnlyApiKeyScopes } from '@n8n/permissions';
 // eslint-disable-next-line n8n-local-rules/misplaced-n8n-typeorm-import
@@ -13,8 +13,11 @@ import type { OpenAPIV3 } from 'openapi-types';
 
 import { JwtService } from './jwt.service';
 import { LastActiveAtService } from './last-active-at.service';
-
 import { EventService } from '@/events/event.service';
+
+// [CUSTOM-FORK] License Activation: Allow local IPC requests without API key
+import { LocalIpcAuthService } from './local-ipc-auth.service';
+// [CUSTOM-FORK] End License Activation
 
 const API_KEY_AUDIENCE = 'public-api';
 const API_KEY_ISSUER = 'n8n';
@@ -130,6 +133,15 @@ export class PublicApiKeyService {
 			_scopes: unknown,
 			schema: OpenAPIV3.ApiKeySecurityScheme,
 		): Promise<boolean> => {
+			// [CUSTOM-FORK] License Activation: Allow local IPC requests without API key
+			const localIpcAuthService = Container.get(LocalIpcAuthService);
+			const isLocalAuth = await localIpcAuthService.authenticateLocalRequest(req, version);
+			if (isLocalAuth) {
+				console.log('Local IPC request authenticated without API key');
+				return true;
+			}
+			// [CUSTOM-FORK] End License Activation
+
 			const providedApiKey = req.headers[schema.name.toLowerCase()] as string;
 
 			const user = await this.getUserForApiKey(providedApiKey);
@@ -199,6 +211,17 @@ export class PublicApiKeyService {
 
 	getApiKeyScopeMiddleware(endpointScope: ApiKeyScope) {
 		return async (req: Request, res: Response, next: NextFunction) => {
+			// [CUSTOM-FORK] License Activation: Local IPC bypass for scope check
+			if (
+				'x-n8n-api-key' in req.headers &&
+				req.headers['x-n8n-api-key'] === 'local-ipc' &&
+				'user' in req &&
+				req.user
+			) {
+				return next();
+			}
+			// [CUSTOM-FORK] End License Activation
+
 			const apiKey = req.headers['x-n8n-api-key'];
 
 			if (apiKey === undefined || typeof apiKey !== 'string') {

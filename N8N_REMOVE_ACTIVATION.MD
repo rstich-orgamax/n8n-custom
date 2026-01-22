@@ -897,3 +897,100 @@ Bei **Strategie 2** müssen folgende externe Server-Abhängigkeiten entfernt/ers
    - ✅ Ersetzen durch lokale Setzung der Lizenz-Werte ohne Server-Call
 
 **Ergebnis:** Vollständig lokale, offline-fähige Installation ohne jegliche Internet-Abhängigkeit.
+
+---
+
+## REST-API ohne API-Key für lokale IPC-Kommunikation
+
+**Ziel:** Ermöglichen der REST-API-Nutzung ohne API-Key für lokale IPC-Kommunikation innerhalb des gleichen Dienstes.
+
+**Umsetzungsrichtlinien:**
+
+- Lokale Requests (von localhost/127.0.0.1) benötigen keinen API-Key
+- Für lokale Requests wird automatisch der Instance Owner verwendet
+- Externe Requests benötigen weiterhin einen gültigen API-Key
+- **WICHTIG:** Alle geänderten Stellen müssen mit einer eindeutigen Markierung in Form von Kommentaren gekennzeichnet werden
+
+**Implementierung:**
+
+### local-ipc-auth.service.ts (Neue Datei)
+
+**File Path:** `packages/cli/src/services/local-ipc-auth.service.ts`
+
+**Proposed Patch/Change:**
+
+- Neue Service-Klasse für lokale IPC-Authentifizierung
+- Methode `isLocalhostRequest()` prüft, ob eine Request von localhost kommt
+- Methode `authenticateLocalRequest()` authentifiziert lokale Requests ohne API-Key
+- Prüft IP-Adresse (`req.ip`), Hostname (`req.hostname`) und `X-Forwarded-For` Header
+- Verwendet automatisch den Instance Owner für lokale Requests
+
+### public-api-key.service.ts
+
+**File Path:** `packages/cli/src/services/public-api-key.service.ts`
+
+**Proposed Patch/Change:**
+
+- Modifiziere `getAuthMiddleware()` um `LocalIpcAuthService` zu verwenden
+- Ruft `authenticateLocalRequest()` auf, bevor die API-Key-Authentifizierung geprüft wird
+- Minimale Code-Änderung durch Auslagerung der IPC-Logik in separate Service-Klasse
+
+**Code Snippet:**
+
+In `public-api-key.service.ts`:
+
+```typescript
+getAuthMiddleware(version: string) {
+  return async (req: AuthenticatedRequest, ...) => {
+    // [CUSTOM-FORK] License Activation: Allow local IPC requests without API key
+    const localIpcAuthService = Container.get(LocalIpcAuthService);
+    const isLocalAuth = await localIpcAuthService.authenticateLocalRequest(req, version);
+    if (isLocalAuth) {
+      return true;
+    }
+    // [CUSTOM-FORK] End License Activation
+
+    // ... rest of API key authentication logic
+  };
+}
+```
+
+In `local-ipc-auth.service.ts`:
+
+```typescript
+// [CUSTOM-FORK] License Activation: Check if request is from localhost (IPC)
+isLocalhostRequest(req: AuthenticatedRequest): boolean {
+  const ip = req.ip || req.socket.remoteAddress || '';
+  const hostname = req.hostname || req.get('host') || '';
+  // ... localhost detection logic
+}
+
+async authenticateLocalRequest(req: AuthenticatedRequest, version: string): Promise<boolean> {
+  if (!this.isLocalhostRequest(req)) {
+    return false;
+  }
+  // For local IPC requests, use the instance owner user without API key
+  const owner = await this.userRepository.findOne({
+    where: { role: { slug: GLOBAL_OWNER_ROLE.slug } },
+    relations: ['role'],
+  });
+  if (!owner || owner.disabled) {
+    return false;
+  }
+  req.user = owner;
+  return true;
+}
+// [CUSTOM-FORK] End License Activation
+```
+
+**Erkannte lokale Requests:**
+
+- IP-Adressen: `127.0.0.1`, `::1`, `::ffff:127.0.0.1`, `localhost`
+- Hostnamen: `localhost`, `127.*`, `localhost:*`, `[::1]`, `[::1]:*`
+- X-Forwarded-For Header: `127.0.0.1`, `::1`, `localhost`
+
+**Sicherheitshinweise:**
+
+- Diese Funktionalität ist nur für lokale IPC-Kommunikation gedacht
+- Externe Requests benötigen weiterhin einen gültigen API-Key
+- Die Erkennung basiert auf IP-Adresse und Hostname, nicht auf einem speziellen Header

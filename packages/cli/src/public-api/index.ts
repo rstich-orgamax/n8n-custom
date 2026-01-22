@@ -11,7 +11,12 @@ import YAML from 'yamljs';
 
 import { License } from '@/license';
 import { PublicApiKeyService } from '@/services/public-api-key.service';
+
 import { UrlService } from '@/services/url.service';
+
+// [CUSTOM-FORK] License Activation: Allow local IPC requests without API key
+import { localIpcHeaderMiddleware } from '@/public-api/local-ipc-header.middleware';
+// [CUSTOM-FORK] End License Activation
 
 async function createApiRouter(
 	version: string,
@@ -54,6 +59,7 @@ async function createApiRouter(
 	apiController.use(
 		`/${publicApiEndpoint}/${version}`,
 		express.json(),
+		localIpcHeaderMiddleware,
 		openApiValidatorMiddleware({
 			apiSpec: openApiSpecPath,
 			operationHandlers: handlersDirectory,
