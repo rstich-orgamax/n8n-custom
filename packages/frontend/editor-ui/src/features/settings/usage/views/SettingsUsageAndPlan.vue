@@ -27,6 +27,7 @@ import {
 	N8nTooltip,
 } from '@n8n/design-system';
 import EulaAcceptanceModal from '../components/EulaAcceptanceModal.vue';
+import CustomFeaturesPanel from '../components/CustomFeaturesPanel.vue';
 
 const usageStore = useUsageStore();
 const route = useRoute();
@@ -244,6 +245,7 @@ const openCommunityRegisterModal = () => {
 		<N8nHeading tag="h2" size="2xlarge">{{
 			locale.baseText('settings.usageAndPlan.title')
 		}}</N8nHeading>
+
 		<div v-if="!usageStore.isLoading">
 			<N8nHeading tag="h3" :class="$style.title" size="large">
 				<I18nT keypath="settings.usageAndPlan.description" tag="span" scope="global">
@@ -312,6 +314,10 @@ const openCommunityRegisterModal = () => {
 			</div>
 
 			<N8nInfoTip>{{ locale.baseText('settings.usageAndPlan.activeWorkflows.hint') }}</N8nInfoTip>
+
+			<!-- [CUSTOM-FORK] License Activation: Custom Features Panel -->
+			<CustomFeaturesPanel />
+			<!-- [CUSTOM-FORK] End License Activation -->
 
 			<div :class="$style.buttons">
 				<N8nButton

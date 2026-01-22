@@ -19,6 +19,7 @@ import KeyboardShortcutTooltip from '@/app/components/KeyboardShortcutTooltip.vu
 import { useSettingsStore } from '@/app/stores/settings.store';
 import { useGlobalEntityCreation } from '@/app/composables/useGlobalEntityCreation';
 import BetaTag from '@n8n/design-system/components/BetaTag/BetaTag.vue';
+import OrgaMaxLogo from '@/app/components/OrgaMaxLogo.vue';
 
 defineProps<{
 	isCollapsed: boolean;
@@ -68,6 +69,12 @@ const {
 			[$style.collapsed]: isCollapsed,
 		}"
 	>
+		<!-- [CUSTOM-FORK] License Activation: Use OrgaMax Logo instead of n8n Logo -->
+		<RouterLink v-if="!isCollapsed" :to="{ name: VIEWS.HOMEPAGE }" :class="$style.logo">
+			<OrgaMaxLogo size="small" :collapsed="isCollapsed" />
+		</RouterLink>
+		<!-- [CUSTOM-FORK] End License Activation -->
+		<!-- Original n8n Logo code commented out - replaced with OrgaMax Logo
 		<RouterLink v-if="!isCollapsed" :to="{ name: VIEWS.HOMEPAGE }" :class="$style.logo">
 			<N8nLogo
 				size="small"
@@ -99,6 +106,7 @@ const {
 				</N8nTooltip>
 			</N8nLogo>
 		</RouterLink>
+		-->
 		<N8nNavigationDropdown
 			v-if="!hideCreate"
 			ref="createBtn"
