@@ -77,6 +77,7 @@ import { BrowserUseServer } from './modules/instance-ai/browser/browser-use-serv
 import { PubSubRegistry } from './scaling/pubsub/pubsub.registry';
 import { ApiKeyAuthStrategy } from './services/api-key-auth.strategy';
 import { AuthStrategyRegistry } from './services/auth-strategy.registry';
+import { LocalIpcAuthStrategy } from './services/local-ipc-auth.strategy';
 import { SessionCookieAuthStrategy } from './services/session-cookie-auth.strategy';
 
 @Service()
@@ -193,6 +194,9 @@ export class Server extends AbstractServer {
 		const registry = Container.get(AuthStrategyRegistry);
 		registry.register(Container.get(ApiKeyAuthStrategy));
 		registry.register(Container.get(SessionCookieAuthStrategy));
+		// [CUSTOM-FORK] Local IPC: greift nur, wenn der Request gar keine Credentials
+		// mitbringt — echte API-Keys und Session-Cookies behalten Vorrang.
+		registry.register(Container.get(LocalIpcAuthStrategy));
 
 		// Parse cookies for easier access
 		this.app.use(cookieParser());
